@@ -22,6 +22,18 @@ const TYPE_DEFAULT_ICON = {
   storage: 'mdi:battery',
 };
 
+export function colorForType(type) {
+  return TYPE_COLORS[type] || '#888888';
+}
+
+export function formatPower(watts) {
+  if (watts === null || watts === undefined || Number.isNaN(watts)) return '—';
+  if (Math.abs(watts) >= 1000) {
+    return `${(watts / 1000).toFixed(1).replace('.', ',')} kW`;
+  }
+  return `${Math.round(watts)} W`;
+}
+
 export function normalizeConfig(config) {
   if (!config.nodes || !Array.isArray(config.nodes) || config.nodes.length === 0) {
     throw new Error('Au moins un nœud est obligatoire');
