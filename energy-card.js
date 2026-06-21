@@ -75,3 +75,8 @@ export function normalizeConfig(config) {
     nodes,
   };
 }
+
+export function buildConnectorPath(from, to) {
+  const midX = (from.x + to.x) / 2;
+  return `M ${from.x} ${from.y} C ${midX} ${from.y}, ${midX} ${to.y}, ${to.x} ${to.y}`;
+}
