@@ -1,0 +1,27 @@
+# Config correspondant à la maquette
+type: custom:energy-card
+title: Système énergétique
+center:
+  entity: sensor.maison_puissance
+nodes:
+  - side: top-left
+    type: production
+    entity: sensor.solaire_puissance
+    title: Solaire
+    icon: mdi:white-balance-sunny
+  - side: top-right
+    type: consumption
+    entity: sensor.piscine_puissance
+    title: Piscine
+    icon: mdi:pool
+  - side: left
+    type: grid
+    title: Réseau
+    icon: mdi:transmission-tower
+    import_entity: sensor.reseau_import
+    export_entity: sensor.reseau_export
+  - side: bottom
+    type: storage
+    entity: sensor.ballon_puissance
+    title: Ballon
+    icon: mdi:battery
