@@ -80,3 +80,26 @@ export function buildConnectorPath(from, to) {
   const midX = (from.x + to.x) / 2;
   return `M ${from.x} ${from.y} C ${midX} ${from.y}, ${midX} ${to.y}, ${to.x} ${to.y}`;
 }
+
+export function parseHistoryResponse(rawEntityHistory) {
+  if (!Array.isArray(rawEntityHistory)) return [];
+  return rawEntityHistory
+    .map((entry) => ({
+      t: new Date(entry.last_changed).getTime(),
+      v: parseFloat(entry.state),
+    }))
+    .filter((p) => !Number.isNaN(p.v) && !Number.isNaN(p.t));
+}
+
+export function downsampleHistory(points, n) {
+  if (points.length === 0) return [];
+  if (n <= 1) return [points[points.length - 1]];
+  if (points.length <= n) return points.slice();
+
+  const result = [];
+  for (let i = 0; i < n; i++) {
+    const idx = Math.round((i * (points.length - 1)) / (n - 1));
+    result.push(points[idx]);
+  }
+  return result;
+}
