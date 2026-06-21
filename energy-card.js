@@ -338,21 +338,24 @@ class EnergyCard extends HTMLElement {
     if (!this._hass) return;
     const start = new Date(Date.now() - HISTORY_WINDOW_MS).toISOString();
 
-    for (const { node, el } of this._nodeEls) {
-      const entityId = node.type === 'grid' ? node.import_entity : node.entity;
-      const pathEl = el.querySelector('[data-role="sparkline"]');
-      try {
-        const response = await this._hass.callApi(
-          'GET',
-          `history/period/${start}?filter_entity_id=${entityId}`
-        );
-        const points = parseHistoryResponse(response[0] || []);
-        const sampled = downsampleHistory(points, SPARKLINE_POINTS);
-        this._renderSparkline(pathEl, sampled);
-      } catch {
-        this._renderSparkline(pathEl, []);
-      }
-    }
+    await Promise.all(
+      this._nodeEls.map(async ({ node, el }) => {
+        const entityId = node.type === 'grid' ? node.import_entity : node.entity;
+        const pathEl = el.querySelector('[data-role="sparkline"]');
+        try {
+          const response = await this._hass.callApi(
+            'GET',
+            `history/period/${start}?filter_entity_id=${entityId}`
+          );
+          const points = parseHistoryResponse(response[0] || []);
+          const sampled = downsampleHistory(points, SPARKLINE_POINTS);
+          this._renderSparkline(pathEl, sampled);
+        } catch (err) {
+          console.warn('energy-card: history fetch failed for', entityId, err);
+          this._renderSparkline(pathEl, []);
+        }
+      })
+    );
   }
 
   _renderSparkline(pathEl, points) {
