@@ -379,6 +379,11 @@ class EnergyCard extends HTMLElement {
     this._hass = hass;
     if (!this.config) return;
 
+    if (!this._historyFetchedOnce) {
+      this._historyFetchedOnce = true;
+      this._refreshHistory();
+    }
+
     for (const { node, el } of this._nodeEls) {
       if (node.type === 'grid') {
         const imp = hass.states[node.import_entity];
