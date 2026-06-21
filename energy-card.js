@@ -170,6 +170,10 @@ const STYLE = `
 
 if (typeof window !== 'undefined' && window.customElements) {
 
+const SPARKLINE_POINTS = 12;
+const HISTORY_REFRESH_MS = 5 * 60 * 1000;
+const HISTORY_WINDOW_MS = 2 * 60 * 60 * 1000;
+
 class EnergyCard extends HTMLElement {
   setConfig(config) {
     this.config = normalizeConfig(config);
@@ -216,11 +220,14 @@ class EnergyCard extends HTMLElement {
     this._resizeObserver = new ResizeObserver(() => this._layoutConnectors());
     this._resizeObserver.observe(this._gridEl);
     this._rafId = requestAnimationFrame(() => this._tick());
+    this._historyTimer = setInterval(() => this._refreshHistory(), HISTORY_REFRESH_MS);
+    this._refreshHistory();
   }
 
   disconnectedCallback() {
     if (this._resizeObserver) this._resizeObserver.disconnect();
     if (this._rafId) cancelAnimationFrame(this._rafId);
+    if (this._historyTimer) clearInterval(this._historyTimer);
   }
 
   _renderNodeCard(node) {
@@ -325,6 +332,47 @@ class EnergyCard extends HTMLElement {
       p.dot.setAttribute('cy', point.y);
     }
     this._rafId = requestAnimationFrame(() => this._tick());
+  }
+
+  async _refreshHistory() {
+    if (!this._hass) return;
+    const start = new Date(Date.now() - HISTORY_WINDOW_MS).toISOString();
+
+    for (const { node, el } of this._nodeEls) {
+      const entityId = node.type === 'grid' ? node.import_entity : node.entity;
+      const pathEl = el.querySelector('[data-role="sparkline"]');
+      try {
+        const response = await this._hass.callApi(
+          'GET',
+          `history/period/${start}?filter_entity_id=${entityId}`
+        );
+        const points = parseHistoryResponse(response[0] || []);
+        const sampled = downsampleHistory(points, SPARKLINE_POINTS);
+        this._renderSparkline(pathEl, sampled);
+      } catch {
+        this._renderSparkline(pathEl, []);
+      }
+    }
+  }
+
+  _renderSparkline(pathEl, points) {
+    if (points.length < 2) {
+      pathEl.setAttribute('d', 'M 0 15 L 100 15');
+      return;
+    }
+
+    const values = points.map((p) => p.v);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min || 1;
+
+    const coords = points.map((p, i) => {
+      const x = (i / (points.length - 1)) * 100;
+      const y = 28 - ((p.v - min) / range) * 26;
+      return `${x},${y}`;
+    });
+
+    pathEl.setAttribute('d', `M ${coords.join(' L ')} L 100 30 L 0 30 Z`);
   }
 
   set hass(hass) {
