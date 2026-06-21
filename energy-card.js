@@ -215,10 +215,12 @@ class EnergyCard extends HTMLElement {
 
     this._resizeObserver = new ResizeObserver(() => this._layoutConnectors());
     this._resizeObserver.observe(this._gridEl);
+    this._rafId = requestAnimationFrame(() => this._tick());
   }
 
   disconnectedCallback() {
     if (this._resizeObserver) this._resizeObserver.disconnect();
+    if (this._rafId) cancelAnimationFrame(this._rafId);
   }
 
   _renderNodeCard(node) {
@@ -310,6 +312,19 @@ class EnergyCard extends HTMLElement {
       const reverse = node.type === 'consumption' || node.type === 'storage';
       this._paths.push({ path, dot, length: path.getTotalLength(), reverse });
     }
+  }
+
+  _tick() {
+    const now = performance.now();
+    const speed = 0.0002; // fraction du tracé parcourue par ms
+    for (const p of this._paths || []) {
+      let t = (now * speed) % 1;
+      if (p.reverse) t = 1 - t;
+      const point = p.path.getPointAtLength(t * p.length);
+      p.dot.setAttribute('cx', point.x);
+      p.dot.setAttribute('cy', point.y);
+    }
+    this._rafId = requestAnimationFrame(() => this._tick());
   }
 
   set hass(hass) {
