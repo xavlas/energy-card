@@ -59,7 +59,7 @@ Anneau en `conic-gradient` fixe (orange → vert → bleu → violet), purement 
 
 ## Sparklines
 
-Chaque carte (nœuds + centre) affiche une mini-courbe de tendance en bas, basée sur l'historique réel de son entité :
+Chaque carte de nœud (pas le cercle central, qui n'en a pas dans la maquette) affiche une mini-courbe de tendance en bas, basée sur l'historique réel de son entité (pour `grid`, basée sur `import_entity`) :
 - récupération via `hass.callApi('GET', 'history/period/...')`, fenêtre ~2h
 - rafraîchissement toutes les ~5 minutes (pas à chaque tick d'animation)
 - downsampling en ~12 points avant tracé
