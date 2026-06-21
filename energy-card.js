@@ -221,7 +221,6 @@ class EnergyCard extends HTMLElement {
     this._resizeObserver.observe(this._gridEl);
     this._rafId = requestAnimationFrame(() => this._tick());
     this._historyTimer = setInterval(() => this._refreshHistory(), HISTORY_REFRESH_MS);
-    this._refreshHistory();
   }
 
   disconnectedCallback() {

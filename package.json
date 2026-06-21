@@ -1,7 +1,7 @@
 {
   "name": "energy-card",
   "version": "1.0.0",
-  "description": "Animated energy system gauge card for Home Assistant",
+  "description": "Animated energy system flow card for Home Assistant",
   "type": "module",
   "scripts": {
     "test": "node --test"
