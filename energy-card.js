@@ -212,6 +212,13 @@ class EnergyCard extends HTMLElement {
 
     this._centerEl.appendChild(this._renderCenterCard());
     this._renderLegend();
+
+    this._resizeObserver = new ResizeObserver(() => this._layoutConnectors());
+    this._resizeObserver.observe(this._gridEl);
+  }
+
+  disconnectedCallback() {
+    if (this._resizeObserver) this._resizeObserver.disconnect();
   }
 
   _renderNodeCard(node) {
@@ -265,6 +272,44 @@ class EnergyCard extends HTMLElement {
         </div>`
       )
       .join('');
+  }
+
+  _layoutConnectors() {
+    const gridRect = this._gridEl.getBoundingClientRect();
+    this._svg.setAttribute('viewBox', `0 0 ${gridRect.width} ${gridRect.height}`);
+    this._svg.innerHTML = '';
+
+    const centerRect = this._centerEl.getBoundingClientRect();
+    const centerPoint = {
+      x: centerRect.left + centerRect.width / 2 - gridRect.left,
+      y: centerRect.top + centerRect.height / 2 - gridRect.top,
+    };
+
+    this._paths = [];
+
+    for (const { node, el } of this._nodeEls) {
+      const rect = el.getBoundingClientRect();
+      const fromPoint = {
+        x: rect.left + rect.width / 2 - gridRect.left,
+        y: rect.top + rect.height / 2 - gridRect.top,
+      };
+
+      const d = buildConnectorPath(fromPoint, centerPoint);
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', d);
+      path.setAttribute('class', 'ec-connector');
+      path.style.setProperty('--ec-color', colorForType(node.type));
+      this._svg.appendChild(path);
+
+      const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      dot.setAttribute('r', '5');
+      dot.setAttribute('class', 'ec-flow-dot');
+      dot.style.setProperty('--ec-color', colorForType(node.type));
+      this._svg.appendChild(dot);
+
+      const reverse = node.type === 'consumption' || node.type === 'storage';
+      this._paths.push({ path, dot, length: path.getTotalLength(), reverse });
+    }
   }
 
   set hass(hass) {
