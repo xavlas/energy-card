@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { background:#111; margin:0; padding:20px; font-family:Arial; }
+    .card { width:900px; max-width:100%; margin:0 0 30px; }
+    h2 { color:#ccc; }
+  </style>
+</head>
+<body>
+  <h2>Configuration de la maquette</h2>
+  <div class="card" id="a"></div>
+
+  <script type="module">
+    import '../energy-card.js';
+
+    function makeHistory(base, count) {
+      const now = Date.now();
+      return Array.from({ length: count }, (_, i) => ({
+        state: String(base + Math.sin(i / 2) * base * 0.2),
+        last_changed: new Date(now - (count - i) * 5 * 60 * 1000).toISOString(),
+      }));
+    }
+
+    const hass = {
+      states: {
+        'sensor.solar': { state: '22900' },
+        'sensor.pool': { state: '0' },
+        'sensor.grid_import': { state: '0' },
+        'sensor.grid_export': { state: '122' },
+        'sensor.water_heater': { state: '0' },
+        'sensor.house': { state: '23000' },
+      },
+      callApi: async (method, path) => {
+        const match = path.match(/filter_entity_id=([^&]+)/);
+        const entityId = match ? match[1] : null;
+        const base = parseFloat(hass.states[entityId]?.state || '0') || 1;
+        return [makeHistory(base, 12)];
+      },
+    };
+
+    const card = document.createElement('energy-card');
+    card.setConfig({
+      title: 'Système énergétique',
+      center: { entity: 'sensor.house' },
+      nodes: [
+        { side: 'top-left', type: 'production', entity: 'sensor.solar', title: 'Solaire', icon: 'mdi:white-balance-sunny' },
+        { side: 'top-right', type: 'consumption', entity: 'sensor.pool', title: 'Piscine', icon: 'mdi:pool' },
+        { side: 'left', type: 'grid', title: 'Réseau', icon: 'mdi:transmission-tower', import_entity: 'sensor.grid_import', export_entity: 'sensor.grid_export' },
+        { side: 'bottom', type: 'storage', entity: 'sensor.water_heater', title: 'Ballon', icon: 'mdi:battery' },
+      ],
+    });
+    document.getElementById('a').appendChild(card);
+    card.hass = hass;
+  </script>
+</body>
+</html>
