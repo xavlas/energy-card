@@ -221,6 +221,8 @@ class EnergyCard extends HTMLElement {
     this._resizeObserver.observe(this._gridEl);
     this._rafId = requestAnimationFrame(() => this._tick());
     this._historyTimer = setInterval(() => this._refreshHistory(), HISTORY_REFRESH_MS);
+
+    this._applyHass();
   }
 
   disconnectedCallback() {
@@ -379,7 +381,16 @@ class EnergyCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
-    if (!this.config) return;
+    this._applyHass();
+  }
+
+  _applyHass() {
+    // HA can assign `.hass` before the element is connected to the DOM
+    // (e.g. pre-configuring off-screen cards in some Lovelace views), so
+    // `_nodeEls` may not exist yet. Bail out here; connectedCallback calls
+    // this again once the DOM (and `_nodeEls`) is ready.
+    if (!this.config || !this._nodeEls || !this._hass) return;
+    const hass = this._hass;
 
     if (!this._historyFetchedOnce) {
       this._historyFetchedOnce = true;
