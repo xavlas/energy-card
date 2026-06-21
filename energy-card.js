@@ -183,6 +183,9 @@ class EnergyCard extends HTMLElement {
     if (this.initialized) return;
     this.initialized = true;
 
+    this.style.display = 'block';
+    this.style.width = '100%';
+
     this.innerHTML = `
       <style>${STYLE}</style>
       <ha-card class="ec-card-root">
